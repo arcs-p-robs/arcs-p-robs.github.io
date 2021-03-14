@@ -181,6 +181,10 @@ int main(/*int argc, char const *argv[]*/)
         transform_to_probs(location_beliefs);
         // cerr << vec_to_string(location_beliefs, "normalized location_beliefs") << endl;
 
+        // --------------------------------
+        // Print simulation information
+        // --------------------------------
+
         auto max_prob_ptr = max_element(location_beliefs.begin(), location_beliefs.end());
         auto max_val = *max_prob_ptr;
         ostringstream predicted_locations;

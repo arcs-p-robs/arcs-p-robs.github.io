@@ -6,6 +6,7 @@
 #include <algorithm>
 using std::fill;
 using std::for_each;
+using std::max_element;
 using std::transform;
 
 #include <functional>
@@ -16,6 +17,9 @@ using std::boolalpha;
 using std::cerr;
 using std::cout;
 using std::endl;
+
+#include <iterator>
+using std::distance;
 
 #include <numeric>
 using std::accumulate;
@@ -47,7 +51,8 @@ void transform_to_probs(std::vector<double> &vec)
 // Convert a vector to space separated list in string form
 string vec_to_string(const vector<double> &vec, const string &title = "")
 {
-    ostringstream oss(title);
+    ostringstream oss;
+    oss << title;
     for (const auto &val : vec)
         oss << "  " << val;
     return oss.str();
@@ -110,9 +115,9 @@ int main(/*int argc, char const *argv[]*/)
     // any given (discrete) corridor location.
 
     // The robot can sense the wall/door
-    double sensedWall_byWall = 0.999;                 // p(Z = Wall | X = Wall)
+    double sensedWall_byWall = 0.8;                   // p(Z = Wall | X = Wall)
     double sensedDoor_byWall = 1 - sensedWall_byWall; // p(Z = Door | X = Wall)
-    double sensedDoor_byDoor = 0.999;                 // p(Z = Wall | X = Door)
+    double sensedDoor_byDoor = 0.8;                   // p(Z = Wall | X = Door)
     double sensedWall_byDoor = 1 - sensedDoor_byDoor; // p(Z = Door | X = Door)
 
     // The robot can attempt to move one cell at a time, and
@@ -122,7 +127,7 @@ int main(/*int argc, char const *argv[]*/)
     double moveSuccess_byDoor = 0.999;
     double moveFail_byDoor = 1 - moveSuccess_byDoor;
 
-    bool moved, sensed;
+    bool moved = false, sensed;
     size_t num_steps = 10;
     for (size_t step = 0; step < num_steps; step++)
     {
@@ -135,6 +140,24 @@ int main(/*int argc, char const *argv[]*/)
             moved = true;
             actual_location = (actual_location + 1) % corridor_length;
         }
+
+        // --------------------------------
+        // Prediction based on u_t = 1 (motion model)
+        // --------------------------------
+        for (size_t i = 0; i < corridor_length; i++)
+        {
+            location_beliefs_bar.at(i) = 0;
+
+            // Get to corridor.at(i) from previous spot (wrapping around end)
+            auto prev_index = i == 0 ? corridor_length - 1 : i - 1;
+            auto move_prob = corridor.at(prev_index) == WALL ? moveSuccess_byWall : moveSuccess_byDoor;
+            location_beliefs_bar.at(i) += location_beliefs.at(prev_index) * move_prob;
+
+            // Stay at corridor.at(i) by not moving away
+            auto no_move_prob = corridor.at(i) == WALL ? moveFail_byWall : moveFail_byDoor;
+            location_beliefs_bar.at(i) += location_beliefs.at(i) * no_move_prob;
+        }
+        // cerr << vec_to_string(location_beliefs_bar, "location_beliefs_bar") << endl;
 
         // --------------------------------
         // Sense the environment
@@ -152,37 +175,30 @@ int main(/*int argc, char const *argv[]*/)
             auto scale = sense_prob / (1 - sense_prob);
             auto likelihood = corridor.at(i) == sensorValue ? scale : 1;
 
-            location_beliefs_bar.at(i) = likelihood * location_beliefs.at(i);
-        }
-        // cerr << vec_to_string(location_beliefs_bar, "location_beliefs_bar") << endl;
-        transform_to_probs(location_beliefs_bar);
-        // cerr << vec_to_string(location_beliefs_bar, "normalized location_beliefs_bar") << endl;
-
-        // --------------------------------
-        // Prediction based on u_t = 1 (motion model)
-        // --------------------------------
-
-        // TODO: should this be bar?
-
-        if (step < num_steps - 1)
-        {
-            for (size_t i = 0; i < corridor_length; i++)
-            {
-                location_beliefs.at(i) = 0;
-
-                // Get to corridor.at(i) from previous spot (wrapping around end)
-                auto prev_index = i == 0 ? corridor_length - 1 : i - 1;
-                auto move_prob = corridor.at(prev_index) == WALL ? moveSuccess_byWall : moveSuccess_byDoor;
-                location_beliefs.at(i) += location_beliefs_bar.at(prev_index) * move_prob;
-
-                // Stay at corridor.at(i) by not moving away
-                auto no_move_prob = corridor.at(i) == WALL ? moveFail_byWall : moveFail_byDoor;
-                location_beliefs.at(i) += location_beliefs_bar.at(i) * no_move_prob;
-            }
+            location_beliefs.at(i) = likelihood * location_beliefs_bar.at(i);
         }
         // cerr << vec_to_string(location_beliefs, "location_beliefs") << endl;
+        transform_to_probs(location_beliefs);
+        // cerr << vec_to_string(location_beliefs, "normalized location_beliefs") << endl;
+
+        auto max_prob_ptr = max_element(location_beliefs.begin(), location_beliefs.end());
+        auto max_val = *max_prob_ptr;
+        ostringstream predicted_locations;
+        predicted_locations << '"';
+        string sep = "";
+        for (auto itr = location_beliefs.begin(); itr != location_beliefs.end(); ++itr)
+        {
+            auto val = *itr;
+            if (val >= (max_val - 0.01))
+            {
+                predicted_locations << sep << distance(location_beliefs.begin(), itr);
+                sep = ",";
+            }
+        }
+        predicted_locations << '"';
 
         cout << step << " " << actual_location
+             << " " << predicted_locations.str()
              << vec_to_string(location_beliefs)
              << (sensorValue == WALL ? " wall" : " door")
              << boolalpha << " " << moved << " " << sensed << endl;

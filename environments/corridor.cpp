@@ -65,7 +65,7 @@ int main(/*int argc, char const *argv[]*/)
     default_random_engine rand_eng(rd());
 
     // Distribution for computing success/failure
-    uniform_real_distribution uniform_dist(0.0, 1.0);
+    uniform_real_distribution<double>  uniform_dist(0.0, 1.0);
     auto uniform = [&rand_eng, &uniform_dist]() {
         return uniform_dist(rand_eng);
     };

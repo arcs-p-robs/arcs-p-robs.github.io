@@ -4,13 +4,8 @@
 // - command line arguments for: start location, probabilities, other?
 
 #include <algorithm>
-using std::fill;
-using std::for_each;
 using std::max_element;
 using std::transform;
-
-#include <functional>
-using std::multiplies;
 
 #include <iostream>
 using std::boolalpha;
@@ -39,10 +34,13 @@ using std::string;
 #include <vector>
 using std::vector;
 
-// Normalize the vector values to [0, 1]
+// Turn into valid probabilities
 void transform_to_probs(std::vector<double> &vec)
 {
+    // Get the sum of all values in vec
     auto sum = accumulate(vec.begin(), vec.end(), 0.0);
+
+    // Overwrite each val in vec by val/sum
     transform(vec.begin(), vec.end(), vec.begin(), [sum](auto val) {
         return val / sum;
     });
@@ -60,12 +58,14 @@ string vec_to_string(const vector<double> &vec, const string &title = "")
 
 int main(/*int argc, char const *argv[]*/)
 {
-    // Create a function for generating random, uniform numbers in [0, 1]
+    // Create a random device and engine
     random_device rd;
     default_random_engine rand_eng(rd());
 
     // Distribution for computing success/failure
     uniform_real_distribution uniform_dist(0.0, 1.0);
+
+    // Shorthand for uniform values in [0, 1]
     auto uniform = [&rand_eng, &uniform_dist]() {
         return uniform_dist(rand_eng);
     };
@@ -122,13 +122,15 @@ int main(/*int argc, char const *argv[]*/)
 
     // The robot can attempt to move one cell at a time, and
     // it tries to move every time step.
-    double moveSuccess_byWall = 0.999;
+    double moveSuccess_byWall = 0.9;
     double moveFail_byWall = 1 - moveSuccess_byWall;
-    double moveSuccess_byDoor = 0.999;
+    double moveSuccess_byDoor = 0.9;
     double moveFail_byDoor = 1 - moveSuccess_byDoor;
 
     bool moved = false, sensed;
+
     size_t num_steps = 10;
+
     for (size_t step = 0; step < num_steps; step++)
     {
         // --------------------------------
@@ -185,6 +187,7 @@ int main(/*int argc, char const *argv[]*/)
         // Print simulation information
         // --------------------------------
 
+        // Find the most likely locations in the corridor
         auto max_prob_ptr = max_element(location_beliefs.begin(), location_beliefs.end());
         auto max_val = *max_prob_ptr;
         ostringstream predicted_locations;

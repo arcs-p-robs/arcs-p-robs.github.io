@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]>      <html class="no-js"> <!--<![endif]-->
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Bayes Filter in a Discrete Corridor</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="common.css">
+</head>
+
+<body>
+    <!--[if lt IE 7]>
+            <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="#">upgrade your browser</a> to improve your experience.</p>
+        <![endif]-->
+
+    <header>
+        <h1>Bayes Filter in a Discrete Corridor</h1>
+    </header>
+
+    <p>
+        This is a tutorial showing how to implement a Bayes Filter as shown in <a
+            href="http://probabilistic-robotics.org/"><em>Probabilistic Robotics</em> by Sebastian Thrun et al.</a>
+    </p>
+
+
+    <div id="demo">
+        <div id="ui">
+            <input id="reset-button" type="button" value="Reset">
+            <input id="step-button" type="button" value="Step">
+        </div>
+        <svg id="display"></svg>
+    </div>
+
+    <div>
+        <ul>
+            <li>What if we don't move every step?</li>
+            <li>How does that impact the calculation of our beliefs?</li>
+            <li>How does that impact the effectiveness of our measurements?</li>
+        </ul>
+    </div>
+
+
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script src="BayesFilter-CorridorDiscrete.js" async defer></script>
+
+    <footer>License and credit.</footer>
+</body>
+
+</html>

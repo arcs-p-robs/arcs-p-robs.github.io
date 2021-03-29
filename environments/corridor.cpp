@@ -100,7 +100,7 @@ int main(/*int argc, char const *argv[]*/)
 
     // Distribution for computing the starting location
     uniform_int_distribution<size_t> uniform_start(0, corridor_length - 1);
-    size_t actual_location = uniform_start(rand_eng);
+    size_t true_location = uniform_start(rand_eng);
 
     // Our belief map (the probability that the robot is at any
     // specific location along the corridor).
@@ -136,11 +136,11 @@ int main(/*int argc, char const *argv[]*/)
         // --------------------------------
         // Move the robot
         // --------------------------------
-        auto actual_prob_moving = corridor.at(actual_location) == WALL ? moveSuccess_byWall : moveSuccess_byDoor;
+        auto actual_prob_moving = corridor.at(true_location) == WALL ? moveSuccess_byWall : moveSuccess_byDoor;
         if (actual_prob_moving > uniform())
         {
             moved = true;
-            actual_location = (actual_location + 1) % corridor_length;
+            true_location = (true_location + 1) % corridor_length;
         }
 
         // --------------------------------
@@ -164,9 +164,9 @@ int main(/*int argc, char const *argv[]*/)
         // --------------------------------
         // Sense the environment
         // --------------------------------
-        auto actual_prob_sensingWall = corridor.at(actual_location) == WALL ? sensedWall_byWall : sensedWall_byDoor;
+        auto actual_prob_sensingWall = corridor.at(true_location) == WALL ? sensedWall_byWall : sensedWall_byDoor;
         auto sensorValue = actual_prob_sensingWall > uniform() ? WALL : DOOR;
-        sensed = sensorValue == corridor.at(actual_location);
+        sensed = sensorValue == corridor.at(true_location);
 
         // --------------------------------
         // Measurement update based on random z_t (sensor model)
@@ -204,7 +204,7 @@ int main(/*int argc, char const *argv[]*/)
         }
         predicted_locations << '"';
 
-        cout << step << " " << actual_location
+        cout << step << " " << true_location
              << " " << predicted_locations.str()
              << vec_to_string(location_beliefs)
              << (sensorValue == WALL ? " wall" : " door")
